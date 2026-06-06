@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Serve",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:4480",
+      "webRoot": "${workspaceFolder}",
+      "preLaunchTask": "serve:travel"
+    },
+    {
+      "name": "Serve on LAN (for phone)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "echo \"\\nMobile URL: http://$(ipconfig getifaddr en0 || ipconfig getifaddr en1):4480\\nLocal URL:  http://localhost:4480\\n\" && python3 -m http.server 4480",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}
