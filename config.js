@@ -7,4 +7,4 @@
 //
 // Example:
 //   window.GATE_URL = "https://script.google.com/macros/s/AKfyc.../exec";
-window.GATE_URL = "";
+window.GATE_URL = "https://script.google.com/macros/s/AKfycbx6aKlExLEleUguYHIBmVDlxx5UKU3P_UqOgCbmLW8rh6tiPZ3oW6RhtYCRWcb_jggq/exec";
