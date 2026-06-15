@@ -1,9 +1,10 @@
 // Service worker for travel.sankhacooray.com
 // network-first for navigation (fresh HTML on deploy), cache-first for static assets.
-const VERSION = "travel-v1";
+const VERSION = "travel-v2";
 const ASSETS = [
   "./",
   "./index.html",
+  "./photo-validator.html",
   "./config.js",
   "./data.js",
   "./profile.jpg",
