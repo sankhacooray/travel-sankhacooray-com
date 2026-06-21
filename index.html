@@ -37,11 +37,8 @@
       --accent:    #34d6a5;
       --accent-2:  #5b8cff;
       --on-accent: #06120d;
-      --map-panel: #eef2f8;  /* light choropleth surface so "darker = more" reads naturally */
-      --map-foot:  #e3e9f3;
-      --map-empty: #cdd6e6;
-      --map-stroke:#aab6cc;
-      --map-ink:   #5a6478;
+      --map-empty: #222b3d;  /* not-visited country fill — faint land on the dark sea */
+      --map-stroke:#3a465f;  /* faint country borders */
       --danger:    #ff6b6b;
       --radius:    16px;
       --shadow:    0 16px 40px rgba(0, 0, 0, 0.45);
@@ -69,7 +66,7 @@
     header {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-end;
       padding: 22px 0 10px;
     }
     .brand {
@@ -120,10 +117,7 @@
     /* ---- Map card ---- */
     .map-card {
       margin: 22px 0 14px;
-      background: var(--map-panel);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
+      background: transparent;   /* sea = page background, so only the land shows */
       overflow: hidden;
     }
     #map { width: 100%; height: clamp(360px, 56vw, 560px); }
@@ -131,23 +125,23 @@
     .map-foot {
       display: flex; align-items: center; justify-content: space-between;
       gap: 16px; flex-wrap: wrap;
-      padding: 12px 16px;
-      border-top: 1px solid #d3dbe9;
-      background: var(--map-foot);
-      color: var(--map-ink);
+      padding: 12px 2px;
+      border-top: 1px solid var(--line);
+      background: transparent;
+      color: var(--text-dim);
     }
-    .legend { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; color: var(--map-ink); }
+    .legend { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; color: var(--text-dim); }
     .legend .bar {
       width: 160px; height: 10px; border-radius: 6px;
-      background: linear-gradient(90deg, #bfe6da, #0c5c45);
-      border: 1px solid #c2ccdd;
+      background: linear-gradient(90deg, #2f7d62, #5ef0c2);
+      border: 1px solid var(--line);
     }
     .legend .empty-swatch {
       width: 14px; height: 14px; border-radius: 4px;
-      background: var(--map-empty); border: 1px solid #b7c0d2;
+      background: var(--map-empty); border: 1px solid var(--map-stroke);
       display: inline-block; vertical-align: -2px; margin-right: 5px;
     }
-    .map-hint { font-size: 0.8rem; color: var(--map-ink); }
+    .map-hint { font-size: 0.8rem; color: var(--text-mute); }
 
     /* ---- jsVectorMap tooltip skin ---- */
     .jvm-tooltip {
@@ -231,10 +225,6 @@
 <body>
   <div class="wrap">
     <header>
-      <div class="brand">
-        <a href="https://sankhacooray.com">Sankha Cooray<span class="dot">.</span></a>
-        <span class="sub">/ travels</span>
-      </div>
       <button class="avatar-btn" id="avatarBtn" title="Sign in" aria-label="Sign in">
         <img src="profile.jpg" alt="Sankha Cooray" />
       </button>
@@ -242,7 +232,7 @@
 
     <section class="hero">
       <h1>Everywhere I've <span class="grad">been</span>.</h1>
-      <p>A living map of the countries I've travelled to — the deeper the shade, the more often I've been. Hover a country (or tap on mobile) to see how many times.</p>
+      <p>A living map of the countries I've travelled to — the brighter the green, the more often I've been. Hover a country (or tap on mobile) to see how many times.</p>
       <div class="stats">
         <div class="stat"><div class="n" id="statCountries">—</div><div class="l">Countries</div></div>
         <div class="stat"><div class="n" id="statTrips">—</div><div class="l">Total visits</div></div>
@@ -317,8 +307,8 @@
 
     // ---- Colour ramp (jsVectorMap v1.6's series `scale` is an ordinal lookup,
     // value -> colour, NOT an interpolated gradient — so we precompute it). ----
-    var RAMP_FROM = "#bfe6da"; // fewest visits (light tint)
-    var RAMP_TO   = "#0c5c45"; // most visits (deep teal)
+    var RAMP_FROM = "#2f7d62"; // fewest visits (muted green, still clear on the dark sea)
+    var RAMP_TO   = "#5ef0c2"; // most visits (bright mint — pops on dark)
 
     function hexToRgb(h) {
       h = h.replace("#", "");
@@ -381,7 +371,7 @@
             stroke: cssVar("--map-stroke", "#aab6cc"),
             strokeWidth: 0.5
           },
-          hover: { fillOpacity: 0.82, cursor: "pointer" }
+          hover: { stroke: cssVar("--text", "#e9ecf2"), strokeWidth: 1, cursor: "pointer" }
         },
         series: {
           regions: [{
