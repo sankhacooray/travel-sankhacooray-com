@@ -1,6 +1,6 @@
 // Service worker for travel.sankhacooray.com
 // network-first for navigation (fresh HTML on deploy), cache-first for static assets.
-const VERSION = "travel-v3";
+const VERSION = "travel-v4";
 const ASSETS = [
   "./",
   "./index.html",
@@ -30,14 +30,20 @@ self.addEventListener("fetch", (e) => {
   const req = e.request;
   if (req.method !== "GET") return;
 
-  // network-first for navigations so a redeploy is picked up promptly
-  if (req.mode === "navigate") {
+  // data.js is re-baked from the Google Sheet on every sheet edit, and config.js
+  // can change on a gate redeploy — these must stay fresh, so treat them like
+  // navigations (network-first). Cache-first here is what served stale dummy data.
+  const isVolatile =
+    req.mode === "navigate" || /\/(data|config)\.js(\?|$)/.test(new URL(req.url).pathname);
+
+  // network-first for navigations + volatile data so a redeploy / bake is picked up promptly
+  if (isVolatile) {
     e.respondWith(
       fetch(req).then((res) => {
         const copy = res.clone();
         caches.open(VERSION).then((c) => c.put(req, copy));
         return res;
-      }).catch(() => caches.match(req).then((m) => m || caches.match("./index.html")))
+      }).catch(() => caches.match(req).then((m) => m || (req.mode === "navigate" ? caches.match("./index.html") : undefined)))
     );
     return;
   }
