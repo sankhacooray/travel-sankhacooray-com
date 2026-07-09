@@ -295,8 +295,6 @@
   (function () {
     "use strict";
 
-    document.getElementById("year").textContent = new Date().getFullYear();
-
     var GATE_URL = (window.GATE_URL || "").trim();
     var isLocal = ["localhost", "127.0.0.1"].indexOf(location.hostname) !== -1;
 
