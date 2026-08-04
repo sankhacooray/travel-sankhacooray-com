@@ -19,6 +19,6 @@ window.TRAVEL_DATA = {
   },
   "AU": {
     "name": "Australia",
-    "visits": 1
+    "visits": 4
   }
 };
