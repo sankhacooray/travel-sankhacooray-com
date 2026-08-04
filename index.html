@@ -116,27 +116,6 @@
     }
     #map { width: 100%; height: clamp(360px, 56vw, 560px); }
 
-    .map-foot {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 16px; flex-wrap: wrap;
-      padding: 12px 2px;
-      border-top: 1px solid var(--line);
-      background: transparent;
-      color: var(--text-dim);
-    }
-    .legend { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; color: var(--text-dim); }
-    .legend .bar {
-      width: 160px; height: 10px; border-radius: 6px;
-      background: linear-gradient(90deg, #2f7d62, #5ef0c2);
-      border: 1px solid var(--line);
-    }
-    .legend .empty-swatch {
-      width: 14px; height: 14px; border-radius: 4px;
-      background: var(--map-empty); border: 1px solid var(--map-stroke);
-      display: inline-block; vertical-align: -2px; margin-right: 5px;
-    }
-    .map-hint { font-size: 0.8rem; color: var(--text-mute); }
-
     /* ---- jsVectorMap tooltip skin ---- */
     .jvm-tooltip {
       background: var(--surface-2) !important;
@@ -227,15 +206,6 @@
 
     <div class="map-card">
       <div id="map"></div>
-      <div class="map-foot">
-        <div class="legend">
-          <span><span class="empty-swatch"></span>Not visited</span>
-          <span style="margin-left:8px">Fewer</span>
-          <span class="bar"></span>
-          <span>More</span>
-        </div>
-        <div class="map-hint">Hover or tap a country</div>
-      </div>
     </div>
 
   <!-- Shared network footer · cdn.sankhacooray.com (auto-themes to this page) -->
