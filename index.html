@@ -62,12 +62,25 @@
 
     .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
 
-    /* ---- Header ---- */
+    /* ---- Header (app bar) ---- */
     header {
       display: flex;
       align-items: center;
-      justify-content: flex-end;
-      padding: 22px 0 10px;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 18px 0 12px;
+    }
+    .app-title {
+      margin: 0;
+      font-size: clamp(1.25rem, 3.4vw, 1.7rem);
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      line-height: 1.1;
+    }
+    .app-title .grad {
+      background: linear-gradient(92deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
     .brand {
       display: flex;
@@ -95,24 +108,9 @@
     .avatar-btn:hover { border-color: var(--accent); transform: translateY(-1px); }
     .avatar-btn.is-authed { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(52, 214, 165, 0.18); }
 
-    /* ---- Hero ---- */
-    .hero { padding: 26px 0 14px; }
-    .hero h1 {
-      font-size: clamp(1.9rem, 4.5vw, 3rem);
-      line-height: 1.08;
-      margin: 0 0 10px;
-      letter-spacing: -0.02em;
-    }
-    .hero h1 .grad {
-      background: linear-gradient(92deg, var(--accent), var(--accent-2));
-      -webkit-background-clip: text; background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
+    /* ---- Hero (subtitle) ---- */
+    .hero { padding: 4px 0 6px; }
     .hero p { color: var(--text-dim); max-width: 60ch; margin: 0; font-size: 1.02rem; }
-
-    .stats { display: flex; gap: 26px; margin-top: 20px; flex-wrap: wrap; }
-    .stat .n { font-size: 1.7rem; font-weight: 700; color: var(--text); }
-    .stat .l { font-size: 0.78rem; color: var(--text-mute); text-transform: uppercase; letter-spacing: 0.08em; }
 
     /* ---- Map card ---- */
     .map-card {
@@ -225,19 +223,14 @@
 <body>
   <div class="wrap">
     <header>
+      <h1 class="app-title">Everywhere I've <span class="grad">been</span>.</h1>
       <button class="avatar-btn" id="avatarBtn" title="Sign in" aria-label="Sign in">
         <img src="profile.jpg" alt="Sankha Cooray" />
       </button>
     </header>
 
     <section class="hero">
-      <h1>Everywhere I've <span class="grad">been</span>.</h1>
       <p>A living map of the countries I've travelled to — the brighter the green, the more often I've been. Hover a country (or tap on mobile) to see how many times.</p>
-      <div class="stats">
-        <div class="stat"><div class="n" id="statCountries">—</div><div class="l">Countries</div></div>
-        <div class="stat"><div class="n" id="statTrips">—</div><div class="l">Total visits</div></div>
-        <div class="stat"><div class="n" id="statTop">—</div><div class="l">Most visited</div></div>
-      </div>
     </section>
 
     <div class="map-card">
@@ -342,20 +335,12 @@
     function buildMap(countries) {
       var values = {};
       var names = {};
-      var total = 0, max = 0, topCode = null;
       Object.keys(countries).forEach(function (code) {
         var v = Number(countries[code].visits) || 0;
         if (v <= 0) return;
         values[code] = v;
         names[code] = countries[code].name || code;
-        total += v;
-        if (v > max) { max = v; topCode = code; }
       });
-
-      // Stats
-      document.getElementById("statCountries").textContent = Object.keys(values).length;
-      document.getElementById("statTrips").textContent = total;
-      document.getElementById("statTop").textContent = topCode ? (names[topCode] + " · " + max) : "—";
 
       new jsVectorMap({
         selector: "#map",
