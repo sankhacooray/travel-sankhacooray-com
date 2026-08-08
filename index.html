@@ -74,11 +74,12 @@
       padding: 18px 0 12px;
     }
     .app-title {
-      margin: 0;
+      margin: 0; min-width: 0; flex: 1 1 0;
       font-size: clamp(1.25rem, 3.4vw, 1.7rem);
       font-weight: 700;
       letter-spacing: -0.01em;
       line-height: 1.1;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .app-title .grad {
       background: linear-gradient(92deg, var(--accent), var(--accent-2));
@@ -131,13 +132,13 @@
     }
     #map { width: 100%; height: 100%; }
 
-    /* ---- Discover button ---- */
-    .discover-wrap { flex: none; display: flex; justify-content: center; padding: 14px 0 20px; }
+    /* ---- Header actions (Discover + avatar) ---- */
+    .header-actions { flex: none; display: flex; align-items: center; gap: 12px; }
     .discover-btn {
       display: inline-flex; align-items: center; gap: 8px;
-      padding: 11px 22px; border-radius: 999px;
+      padding: 10px 18px; border-radius: 999px;
       border: 1px solid var(--line); background: var(--surface); color: var(--text);
-      font: inherit; font-size: 0.95rem; font-weight: 600; cursor: pointer;
+      font: inherit; font-size: 0.9rem; font-weight: 600; cursor: pointer; white-space: nowrap;
       transition: border-color 0.18s ease, color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
     }
     .discover-btn:hover {
@@ -145,6 +146,12 @@
       transform: translateY(-1px); box-shadow: 0 0 0 3px rgba(52, 214, 165, 0.14);
     }
     .discover-btn span { color: var(--accent); }
+
+    @media (max-width: 560px) {
+      .app-title { font-size: 1.05rem; }
+      .discover-btn { padding: 9px 13px; font-size: 0.82rem; }
+      .db-word { display: none; }   /* "Discover →" on narrow screens */
+    }
 
     /* ---- Sites screen (shared network footer, full screen) ---- */
     .screen-sites {
@@ -263,17 +270,16 @@
     <div class="wrap map-wrap">
       <header>
         <h1 class="app-title">Everywhere I've <span class="grad">been</span>.</h1>
-        <button class="avatar-btn" id="avatarBtn" title="Sign in" aria-label="Sign in">
-          <img src="profile.jpg" alt="Sankha Cooray" />
-        </button>
+        <div class="header-actions">
+          <button class="discover-btn" id="discoverBtn">Discover<span class="db-word">&nbsp;Sankha</span> <span aria-hidden="true">&rarr;</span></button>
+          <button class="avatar-btn" id="avatarBtn" title="Sign in" aria-label="Sign in">
+            <img src="profile.jpg" alt="Sankha Cooray" />
+          </button>
+        </div>
       </header>
 
       <div class="map-card">
         <div id="map"></div>
-      </div>
-
-      <div class="discover-wrap">
-        <button class="discover-btn" id="discoverBtn">Discover Sankha <span aria-hidden="true">&rarr;</span></button>
       </div>
     </div>
   </section>
