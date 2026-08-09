@@ -7,7 +7,7 @@ window.TRAVEL_DATA = {
   },
   "LK": {
     "name": "Sri Lanka",
-    "visits": 3
+    "visits": 10
   },
   "NZ": {
     "name": "New Zealand",
