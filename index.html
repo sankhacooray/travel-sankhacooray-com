@@ -74,8 +74,9 @@
       gap: 14px;
       padding: 18px 0 12px;
     }
+    .header-left { display: flex; align-items: center; gap: 14px; min-width: 0; flex: 1 1 auto; }
     .app-title {
-      margin: 0; min-width: 0; flex: 1 1 0;
+      margin: 0; min-width: 0; flex: 0 1 auto;
       font-size: clamp(1.25rem, 3.4vw, 1.7rem);
       font-weight: 700;
       letter-spacing: -0.01em;
@@ -165,16 +166,16 @@
     .tl-month.visa.has-data .dot { background: var(--visa); box-shadow: 0 0 5px var(--visa); }
 
     .mode-toggle {
-      position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; z-index: 20;
-      display: flex; background: var(--surface); border: 1px solid var(--line);
-      border-radius: 999px; padding: 3px;
+      flex: none; display: inline-flex; background: var(--surface);
+      border: 1px solid var(--line); border-radius: 999px; padding: 3px;
     }
     .mt-opt {
       background: none; border: none; color: var(--text-dim); font: inherit;
-      font-size: 0.82rem; font-weight: 600; padding: 6px 16px; border-radius: 999px;
+      font-size: 0.82rem; font-weight: 600; padding: 6px 14px; border-radius: 999px;
       cursor: pointer; transition: color 0.15s ease, background 0.15s ease;
     }
     .mt-opt.is-on { color: var(--on-accent); background: linear-gradient(92deg, var(--accent), var(--accent-2)); }
+    @media (max-width: 640px) { .mt-opt { padding: 5px 11px; font-size: 0.76rem; } }
 
     .map-legend {
       position: fixed; right: 14px; bottom: 18px; z-index: 20;
@@ -320,7 +321,13 @@
   <section class="screen screen-map is-active" id="screenMap" aria-hidden="false">
     <div class="wrap map-wrap">
       <header>
-        <h1 class="app-title">Everywhere I've <span class="grad">been</span>.</h1>
+        <div class="header-left">
+          <h1 class="app-title">Everywhere I've <span class="grad">been</span>.</h1>
+          <div class="mode-toggle" id="modeToggle" role="group" aria-label="Map mode">
+            <button type="button" class="mt-opt is-on" data-mode="travel">Travel</button>
+            <button type="button" class="mt-opt" data-mode="visa">Visas</button>
+          </div>
+        </div>
         <div class="header-actions">
           <button class="discover-btn" id="discoverBtn">Discover<span class="db-word">&nbsp;Sankha</span> <span aria-hidden="true">&rarr;</span></button>
           <button class="avatar-btn" id="avatarBtn" title="Sign in" aria-label="Sign in">
@@ -336,10 +343,6 @@
 
     <!-- Map overlays (fixed to the viewport; hidden with the screen) -->
     <nav class="timeline" id="timeline" aria-label="Timeline of years"></nav>
-    <div class="mode-toggle" id="modeToggle" role="group" aria-label="Map mode">
-      <button type="button" class="mt-opt is-on" data-mode="travel">Travel</button>
-      <button type="button" class="mt-opt" data-mode="visa">Visas</button>
-    </div>
     <div class="map-legend" id="mapLegend"></div>
   </section>
 
