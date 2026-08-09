@@ -20,5 +20,21 @@ window.TRAVEL_DATA = {
   "AU": {
     "name": "Australia",
     "visits": 2
+  },
+  "NO": {
+    "name": "Norway",
+    "visits": 1
+  },
+  "VN": {
+    "name": "Vietnam",
+    "visits": 1
+  },
+  "MY": {
+    "name": "Malaysia",
+    "visits": 2
+  },
+  "ID": {
+    "name": "Indonesia",
+    "visits": 1
   }
 };
