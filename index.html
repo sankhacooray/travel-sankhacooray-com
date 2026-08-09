@@ -36,6 +36,7 @@
       --text-mute: #6c7689;
       --accent:    #34d6a5;
       --accent-2:  #5b8cff;
+      --visa:      #d9a441;  /* visa-held (not visited) highlight */
       --on-accent: #06120d;
       --map-empty: #222b3d;  /* not-visited country fill — faint land on the dark sea */
       --map-stroke:#3a465f;  /* faint country borders */
@@ -131,6 +132,56 @@
       overflow: hidden;
     }
     #map { width: 100%; height: 100%; }
+
+    /* ---- Map overlays: left-edge timeline, mode toggle, legend ---- */
+    .timeline {
+      position: fixed; left: 10px; top: 50%; transform: translateY(-50%); z-index: 20;
+      display: flex; flex-direction: column; gap: 1px;
+      font-size: 0.72rem; color: var(--text-mute);
+      max-height: 78vh; overflow-y: auto; padding: 4px 2px;
+    }
+    .timeline::-webkit-scrollbar { width: 0; }
+    .tl-all, .tl-year {
+      background: none; border: none; color: var(--text-mute); font: inherit;
+      cursor: pointer; text-align: left; padding: 3px 8px; border-radius: 6px;
+      letter-spacing: 0.02em; line-height: 1.25; transition: color 0.15s ease, background 0.15s ease;
+    }
+    .tl-all:hover, .tl-year:hover { color: var(--text); }
+    .tl-year.is-sel { color: var(--accent); font-weight: 700; }
+    .tl-all.is-sel  { color: var(--text-dim); }
+    .tl-months {
+      display: flex; flex-direction: column; gap: 0;
+      margin: 2px 0 5px 12px; padding-left: 7px; border-left: 1px solid var(--line);
+    }
+    .tl-month {
+      background: none; border: none; color: var(--text-mute); font: inherit; font-size: 0.68rem;
+      cursor: pointer; text-align: left; padding: 1px 6px; border-radius: 5px;
+      display: flex; align-items: center; gap: 6px; transition: color 0.15s ease;
+    }
+    .tl-month:hover { color: var(--text); }
+    .tl-month.is-sel { color: var(--accent); font-weight: 700; }
+    .tl-month .dot { width: 5px; height: 5px; border-radius: 50%; background: transparent; flex: none; }
+    .tl-month.has-data .dot { background: var(--accent); box-shadow: 0 0 5px var(--accent); }
+    .tl-month.visa.has-data .dot { background: var(--visa); box-shadow: 0 0 5px var(--visa); }
+
+    .mode-toggle {
+      position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; z-index: 20;
+      display: flex; background: var(--surface); border: 1px solid var(--line);
+      border-radius: 999px; padding: 3px;
+    }
+    .mt-opt {
+      background: none; border: none; color: var(--text-dim); font: inherit;
+      font-size: 0.82rem; font-weight: 600; padding: 6px 16px; border-radius: 999px;
+      cursor: pointer; transition: color 0.15s ease, background 0.15s ease;
+    }
+    .mt-opt.is-on { color: var(--on-accent); background: linear-gradient(92deg, var(--accent), var(--accent-2)); }
+
+    .map-legend {
+      position: fixed; right: 14px; bottom: 18px; z-index: 20;
+      display: flex; gap: 14px; align-items: center; font-size: 0.72rem; color: var(--text-dim);
+    }
+    .map-legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 5px; }
+    @media (max-width: 560px) { .map-legend { display: none; } }
 
     /* ---- Header actions (Discover + avatar) ---- */
     .header-actions { flex: none; display: flex; align-items: center; gap: 12px; }
@@ -282,6 +333,14 @@
         <div id="map"></div>
       </div>
     </div>
+
+    <!-- Map overlays (fixed to the viewport; hidden with the screen) -->
+    <nav class="timeline" id="timeline" aria-label="Timeline of years"></nav>
+    <div class="mode-toggle" id="modeToggle" role="group" aria-label="Map mode">
+      <button type="button" class="mt-opt is-on" data-mode="travel">Travel</button>
+      <button type="button" class="mt-opt" data-mode="visa">Visas</button>
+    </div>
+    <div class="map-legend" id="mapLegend"></div>
   </section>
 
   <!-- Screen 2 · across the network (shared footer, full screen) -->
@@ -373,68 +432,182 @@
       return scale;
     }
 
-    // ---------- Map ----------
+    // ---------- Data ----------
     function normalize(raw) {
-      // Accept { LK: {name, visits} } or { countries: { LK: {...} } }
       var c = raw && raw.countries ? raw.countries : raw;
       return c && typeof c === "object" ? c : {};
     }
 
-    function buildMap(countries) {
-      var values = {};
-      var names = {};
-      Object.keys(countries).forEach(function (code) {
-        var v = Number(countries[code].visits) || 0;
-        if (v <= 0) return;
-        values[code] = v;
-        names[code] = countries[code].name || code;
-      });
+    var VISA_COLOR = cssVar("--visa", "#d9a441");
+    var EMPTY_FILL = cssVar("--map-empty", "#222b3d");
+    var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
-      new jsVectorMap({
-        selector: "#map",
-        map: "world",
-        zoomButtons: true,
-        zoomOnScroll: false,
-        backgroundColor: "transparent",
+    var counts = {};  // code -> all-time visits
+    var NAMES  = {};  // code -> display name
+    var TRIPS  = [];  // {iso2,name,arr,dep}  (YYYY-MM)
+    var VISAS  = [];  // {iso2,name,from,until,type}
+    var YEARS  = [];  // sorted distinct years present (travel ∪ visa)
+    var state  = { mode: "travel", year: null, month: null };
+    var mapInstance = null;
+
+    function ingest(dataCountries, trips, visas) {
+      counts = {}; NAMES = {};
+      var raw = normalize(dataCountries);
+      Object.keys(raw).forEach(function (code) {
+        var v = Number(raw[code].visits) || 0;
+        if (v <= 0) return;
+        counts[code] = v; NAMES[code] = raw[code].name || code;
+      });
+      TRIPS = Array.isArray(trips) ? trips : [];
+      VISAS = Array.isArray(visas) ? visas : [];
+      TRIPS.forEach(function (t) { if (!NAMES[t.iso2]) NAMES[t.iso2] = t.name || t.iso2; });
+      VISAS.forEach(function (v) { if (!NAMES[v.iso2]) NAMES[v.iso2] = v.name || v.iso2; });
+      var ys = {};
+      TRIPS.forEach(function (t) { yearsOfSpan(t.arr, t.dep).forEach(function (y) { ys[y] = 1; }); });
+      VISAS.forEach(function (v) { yearsOfSpan(v.from, v.until).forEach(function (y) { ys[y] = 1; }); });
+      YEARS = Object.keys(ys).map(Number).sort(function (a, b) { return a - b; });
+    }
+
+    // ---------- Period helpers (month indices: year*12 + monthIndex) ----------
+    function mIdx(ym) { var m = /^(\d{4})-(\d{2})/.exec(ym || ""); return m ? (+m[1]) * 12 + (+m[2] - 1) : null; }
+    function spanOf(a, b) { var ia = mIdx(a); if (ia == null) return null; var ib = mIdx(b); if (ib == null || ib < ia) ib = ia; return [ia, ib]; }
+    function yearsOfSpan(a, b) {
+      var s = spanOf(a, b); if (!s) return [];
+      var out = {}; for (var i = s[0]; i <= s[1]; i++) out[Math.floor(i / 12)] = 1;
+      return Object.keys(out).map(Number);
+    }
+    function overlaps(r, s) { return r && s && s[0] <= r[1] && s[1] >= r[0]; }
+    function periodRange() {
+      if (state.year == null) return null;
+      var y = state.year;
+      if (state.month == null) return [y * 12, y * 12 + 11];
+      return [y * 12 + (state.month - 1), y * 12 + (state.month - 1)];
+    }
+    function travelledInRange(r) {
+      var out = {};
+      if (!r) { Object.keys(counts).forEach(function (c) { out[c] = counts[c]; }); return out; }
+      TRIPS.forEach(function (t) { if (overlaps(r, spanOf(t.arr, t.dep))) out[t.iso2] = (out[t.iso2] || 0) + 1; });
+      return out;
+    }
+    function visaInRange(r) {
+      var out = {};
+      VISAS.forEach(function (v) { if (!r || overlaps(r, spanOf(v.from, v.until))) out[v.iso2] = true; });
+      return out;
+    }
+
+    // ---------- Map render (recreate on each view change) ----------
+    function makeMap(values, scale, tipFn) {
+      var el = document.getElementById("map");
+      if (mapInstance) { try { mapInstance.destroy(); } catch (e) {} }
+      el.innerHTML = "";
+      mapInstance = new jsVectorMap({
+        selector: "#map", map: "world", zoomButtons: true, zoomOnScroll: false, backgroundColor: "transparent",
         regionStyle: {
-          initial: {
-            fill: cssVar("--map-empty", "#cdd6e6"),
-            stroke: cssVar("--map-stroke", "#aab6cc"),
-            strokeWidth: 0.5
-          },
+          initial: { fill: EMPTY_FILL, stroke: cssVar("--map-stroke", "#3a465f"), strokeWidth: 0.5 },
           hover: { stroke: cssVar("--text", "#e9ecf2"), strokeWidth: 1, cursor: "pointer" }
         },
-        series: {
-          regions: [{
-            attribute: "fill",
-            // light tint = fewer visits, deep teal = more visits ("darker = more").
-            // scale is an ordinal value->colour map (see buildScale); values is code->count.
-            scale: buildScale(values),
-            values: values
-          }]
-        },
-        onRegionTooltipShow: function (event, tooltip, code) {
-          var name = names[code] || tooltip.text();
-          var v = values[code];
-          if (v) {
-            tooltip.text('<span class="t-name">' + name + '</span> — <span class="t-visits">' + v + (v === 1 ? " visit" : " visits") + "</span>", true);
-          } else {
-            tooltip.text('<span class="t-name">' + tooltip.text() + '</span> <span class="t-none">— not visited yet</span>', true);
-          }
+        series: { regions: [{ attribute: "fill", scale: scale, values: values }] },
+        onRegionTooltipShow: tipFn
+      });
+    }
+
+    function renderView() {
+      var r = periodRange();
+      var travelled = travelledInRange(r);
+      var values = {}, scale = {}, tip = {};
+      if (state.mode === "travel") {
+        if (!r) { values = travelled; scale = buildScale(values); }
+        else { Object.keys(travelled).forEach(function (c) { values[c] = 1; }); scale = { 1: RAMP_TO }; }
+        Object.keys(travelled).forEach(function (c) {
+          tip[c] = { name: NAMES[c] || c, status: travelled[c] + " visit" + (travelled[c] === 1 ? "" : "s") };
+        });
+      } else {
+        var held = visaInRange(r);
+        Object.keys(travelled).forEach(function (c) { values[c] = 2; tip[c] = { name: NAMES[c] || c, status: "visited" }; });
+        Object.keys(held).forEach(function (c) {
+          if (values[c]) tip[c].status = "visited · visa held";
+          else { values[c] = 1; tip[c] = { name: NAMES[c] || c, status: "visa held" }; }
+        });
+        scale = { 2: RAMP_TO, 1: VISA_COLOR };
+      }
+      makeMap(values, scale, function (event, tooltip, code) {
+        var d = tip[code];
+        if (d) tooltip.text('<span class="t-name">' + d.name + '</span> — <span class="t-visits">' + d.status + '</span>', true);
+        else tooltip.text('<span class="t-name">' + tooltip.text() + '</span> <span class="t-none">— ' + (state.mode === "visa" ? "no visa" : "not visited") + '</span>', true);
+      });
+      updateLegend();
+    }
+
+    // ---------- Timeline (left edge) ----------
+    var tlEl = document.getElementById("timeline");
+    function monthKind(year, m) {
+      var r = [year * 12 + (m - 1), year * 12 + (m - 1)];
+      if (Object.keys(travelledInRange(r)).length) return "travel";
+      if (state.mode === "visa" && Object.keys(visaInRange(r)).length) return "visa";
+      return "";
+    }
+    function buildTimeline() {
+      tlEl.innerHTML = "";
+      var all = document.createElement("button");
+      all.type = "button"; all.className = "tl-all" + (state.year == null ? " is-sel" : ""); all.textContent = "All";
+      all.addEventListener("click", function () { state.year = null; state.month = null; buildTimeline(); renderView(); });
+      tlEl.appendChild(all);
+      YEARS.forEach(function (y) {
+        var yb = document.createElement("button");
+        yb.type = "button"; yb.className = "tl-year" + (state.year === y ? " is-sel" : ""); yb.textContent = y; yb.dataset.year = y;
+        yb.addEventListener("click", function () {
+          if (state.year === y) { state.year = null; state.month = null; }
+          else { state.year = y; state.month = null; }
+          buildTimeline(); renderView();
+        });
+        tlEl.appendChild(yb);
+        if (state.year === y) {
+          var wrap = document.createElement("div"); wrap.className = "tl-months";
+          for (var m = 1; m <= 12; m++) (function (m) {
+            var kind = monthKind(y, m);
+            var mb = document.createElement("button"); mb.type = "button";
+            mb.className = "tl-month" + (kind ? " has-data" : "") + (kind === "visa" ? " visa" : "") + (state.month === m ? " is-sel" : "");
+            mb.innerHTML = '<span class="dot"></span>' + MONTHS[m - 1];
+            mb.addEventListener("click", function () { state.month = (state.month === m ? null : m); buildTimeline(); renderView(); });
+            wrap.appendChild(mb);
+          })(m);
+          tlEl.appendChild(wrap);
         }
       });
     }
 
-    // Baked data is fastest; on localhost fall back to the live gate so the map works pre-bake.
+    // ---------- Legend ----------
+    var legendEl = document.getElementById("mapLegend");
+    function updateLegend() {
+      var per = state.year == null ? "all time" : (state.month == null ? String(state.year) : MONTHS[state.month - 1] + " " + state.year);
+      var html = '<span><span class="sw" style="background:' + RAMP_TO + '"></span>Visited</span>';
+      if (state.mode === "visa") html += '<span><span class="sw" style="background:' + VISA_COLOR + '"></span>Visa held</span>';
+      html += '<span style="color:var(--text-mute)">' + per + '</span>';
+      legendEl.innerHTML = html;
+    }
+
+    // ---------- Mode toggle ----------
+    var modeToggle = document.getElementById("modeToggle");
+    modeToggle.addEventListener("click", function (e) {
+      var btn = e.target.closest ? e.target.closest(".mt-opt") : null; if (!btn) return;
+      if (btn.dataset.mode === state.mode) return;
+      state.mode = btn.dataset.mode;
+      Array.prototype.forEach.call(modeToggle.querySelectorAll(".mt-opt"), function (b) { b.classList.toggle("is-on", b === btn); });
+      buildTimeline(); renderView();
+    });
+
+    // ---------- Boot (baked data fastest; localhost falls back to the live gate) ----------
+    function boot(dataCountries, trips, visas) { ingest(dataCountries, trips, visas); buildTimeline(); renderView(); }
+
     if (typeof window.TRAVEL_DATA !== "undefined" && window.TRAVEL_DATA) {
-      buildMap(normalize(window.TRAVEL_DATA));
+      boot(window.TRAVEL_DATA, window.TRAVEL_TRIPS, window.TRAVEL_VISAS);
     } else if (isLocal && GATE_URL) {
-      fetch(GATE_URL + "?action=mapdata")
+      fetch(GATE_URL + "?action=fulldata")
         .then(function (r) { return r.json(); })
-        .then(function (j) { buildMap(normalize(j)); })
-        .catch(function () { buildMap({}); });
+        .then(function (j) { boot(j.countries, j.trips, j.visas); })
+        .catch(function () { boot({}, [], []); });
     } else {
-      buildMap({});
+      boot({}, [], []);
     }
 
     // ---------- Login ----------
