@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Travels — Sankha Cooray</title>
   <meta name="description" content="An interactive map of the countries Sankha Cooray has visited — shaded by how often." />
-  <meta name="theme-color" content="#0b0d12" />
+  <meta name="theme-color" content="#f4f6fb" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#0b0d12" media="(prefers-color-scheme: dark)" />
 
   <!-- Open Graph / Twitter -->
   <meta property="og:type" content="website" />
@@ -24,8 +25,53 @@
   <link rel="manifest" href="manifest.webmanifest" />
 
   <link rel="stylesheet" href="vendor/jsvectormap.min.css" />
+  <script>(function(){try{var t=localStorage.getItem("sc-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
   <style>
     :root {
+      /* LIGHT (default) — cool near-white map/transit theme; dark overrides below */
+      --bg:        #f4f6fb;
+      --bg-2:      #ffffff;
+      --surface:   #ffffff;
+      --surface-2: #eef1f7;
+      --line:      #d5dce8;
+      --text:      #12161f;
+      --text-dim:  #45505f;
+      --text-mute: #667085;
+      --accent:    #0b8f68;  /* jade, darkened for AA on light */
+      --accent-2:  #3a5fd0;  /* blue, darkened for AA on light */
+      --visa:      #9a7218;  /* visa-held (not visited) highlight */
+      --on-accent: #ffffff;
+      --map-empty: #c7d0de;  /* not-visited country fill — faint land on the light sea */
+      --map-stroke:#aab4c6;  /* faint country borders */
+      --danger:    #d92d2d;
+      --radius:    16px;
+      --shadow:    0 16px 40px rgba(20, 30, 60, 0.14);
+    }
+
+    /* DARK — verbatim original values, applied via system preference (unless forced light) */
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg:        #0b0d12;
+        --bg-2:      #0f131b;
+        --surface:   #141925;
+        --surface-2: #1a2030;
+        --line:      #242c3b;
+        --text:      #e9ecf2;
+        --text-dim:  #aab2c2;
+        --text-mute: #6c7689;
+        --accent:    #34d6a5;
+        --accent-2:  #5b8cff;
+        --visa:      #d9a441;
+        --on-accent: #06120d;
+        --map-empty: #222b3d;
+        --map-stroke:#3a465f;
+        --danger:    #ff6b6b;
+        --shadow:    0 16px 40px rgba(0, 0, 0, 0.45);
+      }
+    }
+
+    /* DARK — forced via toggle */
+    :root[data-theme="dark"] {
       --bg:        #0b0d12;
       --bg-2:      #0f131b;
       --surface:   #141925;
@@ -36,12 +82,11 @@
       --text-mute: #6c7689;
       --accent:    #34d6a5;
       --accent-2:  #5b8cff;
-      --visa:      #d9a441;  /* visa-held (not visited) highlight */
+      --visa:      #d9a441;
       --on-accent: #06120d;
-      --map-empty: #222b3d;  /* not-visited country fill — faint land on the dark sea */
-      --map-stroke:#3a465f;  /* faint country borders */
+      --map-empty: #222b3d;
+      --map-stroke:#3a465f;
       --danger:    #ff6b6b;
-      --radius:    16px;
       --shadow:    0 16px 40px rgba(0, 0, 0, 0.45);
     }
 
@@ -113,6 +158,18 @@
     .avatar-btn img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .avatar-btn:hover { border-color: var(--accent); transform: translateY(-1px); }
     .avatar-btn.is-authed { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(52, 214, 165, 0.18); }
+
+    /* ---- Theme toggle (app-bar) ---- */
+    .theme-toggle { flex:0 0 auto; width:38px; height:38px; display:grid; place-items:center; border-radius:10px; border:1px solid var(--line); background:transparent; color:var(--text-dim); cursor:pointer; transition:color .18s,border-color .18s,background .18s; }
+    .theme-toggle:hover { color:var(--accent); border-color:var(--accent); background:var(--surface-2); }
+    .theme-toggle svg { display:block; }
+    .theme-toggle .icon-sun { display:none; }
+    .theme-toggle .icon-moon { display:block; }
+    @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .theme-toggle .icon-sun{display:block;} :root:not([data-theme="light"]) .theme-toggle .icon-moon{display:none;} }
+    :root[data-theme="dark"] .theme-toggle .icon-sun{display:block;}
+    :root[data-theme="dark"] .theme-toggle .icon-moon{display:none;}
+    :root[data-theme="light"] .theme-toggle .icon-sun{display:none;}
+    :root[data-theme="light"] .theme-toggle .icon-moon{display:block;}
 
     /* ---- Screens (non-scroll, cross-fade) ---- */
     .screen {
@@ -367,6 +424,10 @@
         </div>
         <div class="header-actions">
           <button class="discover-btn" id="discoverBtn">Discover<span class="db-word">&nbsp;Sankha</span> <span aria-hidden="true">&rarr;</span></button>
+          <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle light and dark theme" title="Toggle theme">
+            <svg class="icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+            <svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
+          </button>
           <button class="avatar-btn" id="avatarBtn" title="Sign in" aria-label="Sign in">
             <img src="profile.jpg" alt="Sankha Cooray" />
           </button>
@@ -414,7 +475,7 @@
     </div>
   </section>
 
-  <script async src="https://cdn.sankhacooray.com/js/sankha-footer.js?v=20260901"
+  <script async src="https://cdn.sankhacooray.com/js/sankha-footer.js?v=20260902"
           data-site="travel.sankhacooray.com"></script>
 
   <!-- Login modal -->
@@ -787,5 +848,6 @@
   })();
   </script>
 <script async src="https://sankhacooray.com/js/sankha-analytics.js"></script>
+<script>(function(){var r=document.documentElement,K="sc-theme",mq=window.matchMedia("(prefers-color-scheme: dark)");function eff(){try{var s=localStorage.getItem(K);if(s==="light"||s==="dark")return s;}catch(e){}return mq.matches?"dark":"light";}function wire(){var b=document.getElementById("theme-toggle");if(!b)return;b.addEventListener("click",function(){var n=eff()==="dark"?"light":"dark";try{localStorage.setItem(K,n);}catch(e){}r.setAttribute("data-theme",n);window.dispatchEvent(new CustomEvent("sc-themechange",{detail:n}));});}try{if(mq.addEventListener)mq.addEventListener("change",function(){try{if(!localStorage.getItem(K))window.dispatchEvent(new CustomEvent("sc-themechange"));}catch(e){}});}catch(e){}if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",wire);else wire();})();</script>
 </body>
 </html>
