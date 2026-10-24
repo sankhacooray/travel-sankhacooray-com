@@ -1,15 +1,18 @@
 {
+  "id": "/",
   "name": "Sankha Cooray — Travels",
   "short_name": "Travels",
-  "description": "An interactive map of the countries I've visited, shaded by how often.",
+  "description": "An interactive world map of the countries Sankha Cooray has visited, each shaded by how often he has been there, with a timeline to filter by year.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "lang": "en",
   "background_color": "#0b0d12",
   "theme_color": "#0b0d12",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
