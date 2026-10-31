@@ -163,7 +163,7 @@
       flex: none;
     }
     .avatar-btn img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .avatar-btn:hover { border-color: var(--accent); transform: translateY(-1px); }
+    .avatar-btn:hover { border-color: var(--accent); }
     .avatar-btn.is-authed { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(52, 214, 165, 0.18); }
 
     /* ---- Theme toggle (app-bar) ---- */
@@ -208,7 +208,7 @@
     .timeline::-webkit-scrollbar { width: 0; }
     .tl-all, .tl-year {
       background: none; border: none; color: var(--text-mute); font: inherit;
-      cursor: pointer; text-align: left; padding: 3px 8px; border-radius: 6px;
+      cursor: pointer; text-align: left; padding: 3px 8px; border-radius: 6px; min-height: 24px;
       letter-spacing: 0.02em; line-height: 1.25; transition: color 0.15s ease, background 0.15s ease;
     }
     .tl-all:hover, .tl-year:hover { color: var(--text); }
@@ -436,7 +436,7 @@
             <svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
           </button>
           <button class="avatar-btn" id="avatarBtn" title="Sign in" aria-label="Sign in">
-            <img src="profile.jpg" alt="Sankha Cooray" />
+            <img src="profile-96.webp" alt="Sankha Cooray" width="42" height="42" fetchpriority="high" />
           </button>
         </div>
       </header>
@@ -466,7 +466,7 @@
         </div>
         <div class="project-grid">
           <article class="project-card">
-            <img class="proj-thumb" loading="lazy" src="thumbs/nus-isb.jpg" alt="nus-isb preview">
+            <img class="proj-thumb" loading="lazy" src="thumbs/nus-isb-480.webp" srcset="thumbs/nus-isb-480.webp 480w, thumbs/nus-isb.webp 800w" sizes="(max-width: 600px) 92vw, 360px" width="800" height="420" alt="nus-isb preview">
             <div class="pc-top">
               <h3>nus-isb</h3>
               <span class="pc-chip lab">In the lab</span>
